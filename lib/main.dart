@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 void main() {
@@ -62,6 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+
     initialCameraPosition = const CameraPosition(
       target: LatLng(37.42796133580664, -122.085749655962),
       zoom: 14.4746,
@@ -99,8 +102,37 @@ class _MyHomePageState extends State<MyHomePage> {
         myLocationButtonEnabled: true,
         onMapCreated: (controller) {
           googleMapController = controller;
+          updateMyLocation();
         },
       ),
     );
+  }
+
+  updateMyLocation() {
+    getUserCurrentLocation().then((value) async {
+      print("${value.latitude} ${value.longitude}");
+
+      // specified current users location
+      CameraPosition cameraPosition = CameraPosition(
+        target: LatLng(value.latitude, value.longitude),
+        zoom: 14,
+      );
+
+      googleMapController
+          .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
+      setState(() {});
+    });
+  }
+
+  Future<Position> getUserCurrentLocation() async {
+    await Geolocator.requestPermission()
+        .then((value) {})
+        .onError((error, stackTrace) async {
+      await Geolocator.requestPermission();
+      if (kDebugMode) {
+        print("ERROR $error");
+      }
+    });
+    return await Geolocator.getCurrentPosition();
   }
 }
